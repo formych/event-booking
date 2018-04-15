@@ -38,7 +38,7 @@ CREATE TABLE `event_record` (
     id BIGINT AUTO_INCREMENT,
     event_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
-    status TINYINT NOT NULL DEFAULT 0,
+    `status` TINYINT NOT NULL DEFAULT 0,
     del bool NOT NULL DEFAULT false,
     create_at TIMESTAMP NOT NUll DEFAULT CURRENT_TIMESTAMP,
     update_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -46,22 +46,3 @@ CREATE TABLE `event_record` (
     UNIQUE KEY `uniq_eid_uid` (event_id, user_id),
     KEY `idx_created` (`create_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

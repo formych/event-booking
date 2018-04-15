@@ -31,39 +31,47 @@ var UserDao = userDAO{
 	addColumns: "name, email, password",
 }
 
-func (u userDAO) Add(a *User) (err error) {
+func (u userDAO) Add(user *User) (err error) {
 	exeSQL := fmt.Sprintf("INSERT INTO %s (%s) VALUES (?, ?, ?)", u.tableName, u.addColumns)
-	_, err = DB.Exec(exeSQL, a.Name, a.Email, a.Password)
+	_, err = DB.Exec(exeSQL, user.Name, user.Email, user.Password)
 	if err != nil {
-		logrus.Printf("添加用户信息失败, err:[%v]", err)
+		logrus.Printf("add user faild, sql:[%s], user:[%+v], err:[%v]", exeSQL, *user, err)
 	}
 	return
 }
 
-func (u userDAO) GetByEmail(email string) (user User, err error) {
+func (u userDAO) GetByEmail(email string) (user []User, err error) {
 	exeSQL := fmt.Sprintf("SELECT %s FROM %s WHERE email = ?", u.columns, u.tableName)
-	//为什么不能能用指针，后续看
-	err = DB.Get(&user, exeSQL, email)
+	err = DB.Select(&user, exeSQL, email)
 	if err != nil {
 		logrus.Printf("查询用户信息失败, sql:[%s], email:[%s], err:[%v]", exeSQL, email, err)
 	}
 	return
 }
 
-func (u userDAO) GetByID(id int64) (user User, err error) {
+func (u userDAO) GetByID(id int64) (user []User, err error) {
 	exeSQL := fmt.Sprintf("SELECT %s FROM %s WHERE id = ?", u.columns, u.tableName)
-	_, err = DB.Exec(exeSQL, id)
+	err = DB.Select(&user, exeSQL, id)
 	if err != nil {
 		logrus.Printf("Get user info by id failed, sql:[%s], id:[%d], err:[%v]", exeSQL, id, err)
 	}
 	return
 }
 
-func (u userDAO) GetByName(name string) (user User, err error) {
+func (u userDAO) GetByName(name string) (user []User, err error) {
 	exeSQL := fmt.Sprintf("SELECT %s FROM %s WHERE name = ?", u.columns, u.tableName)
-	_, err = DB.Exec(exeSQL, name)
+	err = DB.Select(&user, exeSQL, name)
 	if err != nil {
-		logrus.Printf("Get user info by name failed, sql:[%s], name:[%d], err:[%v]", exeSQL, name, err)
+		logrus.Printf("Get user info by name failed, sql:[%s], name:[%s], err:[%v]", exeSQL, name, err)
+	}
+	return
+}
+
+func (u userDAO) GetByEmailOrName(email, name string) (user []User, err error) {
+	exeSQL := fmt.Sprintf("SELECT %s FROM %s WHERE email = ? or name = ?", u.columns, u.tableName)
+	err = DB.Select(&user, exeSQL, email, name)
+	if err != nil {
+		logrus.Printf("查询用户信息失败, sql:[%s], email:[%s], name:[%s], err:[%v]", exeSQL, email, name, err)
 	}
 	return
 }
