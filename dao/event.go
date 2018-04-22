@@ -39,7 +39,7 @@ func (e eventDAO) Add(event *Event) (err error) {
 	exeSQL := fmt.Sprintf("INSERT INTO %s (%s) VALUES (?, ?, ?, ?, ?, ?, ?)", e.tName, e.addColumns)
 	_, err = DB.Exec(exeSQL, event.Name, event.Price, event.Dates, event.Codes, event.Capacity, event.CreateBy, event.UpdateBy)
 	if err != nil {
-		logrus.Printf("Add event to db failed, sql:[%s], event:[%+v], err:[%v]", exeSQL, *event, err)
+		logrus.Errorf("Add event to db failed, sql:[%s], event:[%+v], err:[%v]", exeSQL, *event, err)
 	}
 	return
 }
@@ -48,7 +48,7 @@ func (e eventDAO) GetAll() (events []Event, err error) {
 	exeSQL := fmt.Sprintf("SELECT %s FROM %s AND del = false", e.columns, e.tName)
 	err = DB.Select(&events, exeSQL)
 	if err != nil {
-		logrus.Printf("Get all events failed, sql:[%s], err:[%v]", exeSQL, err)
+		logrus.Errorf("Get all events failed, sql:[%s], err:[%v]", exeSQL, err)
 	}
 	return
 }
@@ -57,7 +57,7 @@ func (e eventDAO) Delete(eventID int64) (err error) {
 	exeSQL := fmt.Sprintf("UPDATE %s SET del = true WHERE event_id = ?", e.tName)
 	_, err = DB.Exec(exeSQL, eventID)
 	if err != nil {
-		logrus.Printf("update event del status failed, sql:[%s], eventID:[%d], del:[%t], err:[%v]", exeSQL, eventID, err)
+		logrus.Errorf("update event del status failed, sql:[%s], eventID:[%d], del:[%t], err:[%v]", exeSQL, eventID, err)
 	}
 	return
 }

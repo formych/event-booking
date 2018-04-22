@@ -19,22 +19,29 @@ func Authentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Token")
 		if tokenString == "" {
-			c.JSON(http.StatusOK, gin.H{"code": 2002, "msg": "token is null"})
+			c.JSON(http.StatusForbidden, gin.H{"code": http.StatusForbidden, "msg": "token is null"})
 			c.Abort()
 			return
 		}
+
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 			}
 			return hmacSampleSecret, nil
 		})
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if err != nil {
+			logrus.Errorf("Invalid token string, err:[%s]", err)
+			c.JSON(http.StatusUnauthorized, gin.H{"code": http.StatusUnauthorized, "msg": "wrong token"})
+			c.Abort()
+			return
+		}
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			c.Set("name", claims["name"])
 			c.Set("email", claims["email"])
 			c.Next()
 		} else {
-			c.JSON(http.StatusOK, gin.H{"code": 2001, "msg": err.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{"code": http.StatusUnauthorized, "msg": err.Error()})
 			c.Abort()
 			return
 		}
@@ -51,7 +58,7 @@ func SignUp(c *gin.Context) {
 		return
 	}
 	if user.Password == "" || user.Email == "" || user.Name == "" {
-		c.JSON(2004, gin.H{"code": 2004, "msg": "缺少参数"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": http.StatusBadRequest, "msg": "缺少参数"})
 		return
 	}
 	// 注册前确认是否已经有了该name和email
@@ -60,7 +67,7 @@ func SignUp(c *gin.Context) {
 		c.JSON(200, gin.H{"code": 2005, "msg": "查询用户失败"})
 		return
 	}
-	if len(dbUser) > 0 {
+	if dbUser != nil {
 		c.JSON(200, gin.H{"code": 2006, "msg": "user email exists"})
 		return
 	}
@@ -70,7 +77,7 @@ func SignUp(c *gin.Context) {
 		c.JSON(200, gin.H{"code": 2005, "msg": "查询用户失败"})
 		return
 	}
-	if len(dbUser) > 0 {
+	if dbUser != nil {
 		c.JSON(200, gin.H{"code": 2007, "msg": "user name exists"})
 		return
 	}
@@ -97,15 +104,15 @@ func SignIn(c *gin.Context) {
 		return
 	}
 
-	// dbuser, err := dao.UserDao.GetByEmail(user.Email)
+	dbuser, err := dao.UserDao.GetByEmail(user.Email)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 501, "msg": "网络错误"})
 		return
 	}
-	// if user == nil || user.Password != dbuser.Password {
-	// 	c.JSON(http.StatusOK, gin.H{"code": 402, "msg": "用户不存在或密码错误"})
-	// 	return
-	// }
+	if dbuser == nil || user.Password != dbuser.Password {
+		c.JSON(http.StatusOK, gin.H{"code": 402, "msg": "用户不存在或密码错误"})
+		return
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"name":  user.Name,
 		"email": user.Email,
@@ -114,7 +121,8 @@ func SignIn(c *gin.Context) {
 	})
 	tokenString, err := token.SignedString(hmacSampleSecret)
 	if err != nil {
-		logrus.Printf("get token string failed, err:[%v]", err)
+		logrus.Errorf("signing token string failed, err:[%v]", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"code": http.StatusInternalServerError, "msg": "内部错误"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "登录成功", "token": tokenString})
@@ -124,9 +132,3 @@ func SignIn(c *gin.Context) {
 func SignOut(c *gin.Context) {
 	//jwt的话，前端注销该token
 }
-
-// code:
-// 	2001    token失效
-// 	2002	token为空
-// 	2003	用户已存在
-//	2004

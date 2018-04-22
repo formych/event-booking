@@ -34,7 +34,7 @@ func (e eventBookingDAO) Update(booking EventBooking) (err error) {
 	exeSQL := fmt.Sprintf("INSERT INTO %s (%s) VALUES (?, ?, ?) on duplicate key UPDATE booking = ?", e.tName, e.addColumns)
 	_, err = DB.Exec(exeSQL, booking.EventID, booking.UserID, booking.Booking)
 	if err != nil {
-		logrus.Printf("Update booking status failed, sql:[%s], EventBooking:[%s], err:[%v]", exeSQL, booking, err)
+		logrus.Errorf("Update booking status failed, sql:[%s], EventBooking:[%s], err:[%v]", exeSQL, booking, err)
 	}
 	return
 }
