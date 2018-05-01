@@ -14,15 +14,22 @@ func main() {
 	{
 		u.POST("/signin", model.SignIn)
 		u.POST("/signup", model.SignUp)
-		// u.POST("/signout", model.SignOut)
 	}
 
 	e := r.Group("/api/event")
 	e.Use(model.Authentication())
 	{
 		e.POST("/list", model.EventList)
+		e.POST("/list/:id", model.EventOne)
 		e.POST("/add", model.EventAdd)
-		e.DELETE("/delete", model.EventDelete)
+		e.POST("/update", model.EventUpdate)
+		e.DELETE("/list/:id", model.EventDelete)
+	}
+
+	eb := r.Group("/api/eventbooking")
+	eb.Use(model.Authentication())
+	{
+		eb.POST("/add", model.EventBookingAdd)
 	}
 
 	r.Run(":8080")

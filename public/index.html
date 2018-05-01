@@ -1,14 +1,154 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
+	<meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Page Title</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
-    <script src="main.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <title>event-list</title>
+	<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/assets/css/common.css">
+	<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.1/moment.min.js"></script>
 </head>
 <body>
-    <h1>这是主页</h1>
+	<header id="header">
+		<div class="logo">Event-Booking</div>
+		<div class="not-login">
+			<a class="text-bold text-white no-underline" href="/login.html">Sign in</a>
+			<span class="text-gray">or</span>
+			<a class="text-bold text-white no-underline" href="/join.html">Sign up</a>
+		</div>
+		<div class="login">
+			<span class="text-name text-bold text-white no-underline">name</span>
+			<a class="text-bold text-white no-underline" href="/login.html">Sign out</a>
+		</div>
+	</header>
+	<nav id="sidebar">
+		<ul class="list-unstyled components">
+			<li><a href="/index.html">Events</a></li>
+			<li><a href="/booked.html">Booked</a></li>
+			<!-- <li><a href="/mine.html">Mine</a></li> -->
+		</ul>
+	</nav>
+	<div class="content container">
+		<div class="panel panel-default">
+			<div class="panel-heading text-center panel-name">
+				<span>Event List</span>
+				<a href="/event.html">
+					<button class="btn btn-primary new-event">New Event</button>
+				</a>
+			</div>
+			<div class="table-response">
+    			<table class="table table-bodered table-condensed table-hover" id="table">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Name</th>
+							<th>Price</th>
+							<th>Dates</th>
+							<th>Codes</th>
+							<th>Capacity</th>
+							<th>CreateBy</th>
+							<th>CreateAt</th>
+							<th>UpdateBy</th>
+							<th>UpdateAt</th>
+							<th colspan="4">Operate</th>
+						</tr>
+					</thead>		
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+	    </div>
+	</div>
+	<script>
+		$("header .not-login").hide()
+		$("header .login").show()
+		$("header .login .text-name").text("User : " + localStorage.getItem("name"))
+		$.ajax({
+			type: "POST",
+			url: "/api/event/list",
+			headers: {
+				"Authorization": localStorage.getItem("token"),
+			},
+			success: function(result) {
+				if(result.code === 200) {
+					result.data.forEach(element => {
+						status = "booking"
+						if(element.status === 1) {
+							 status = "booked"
+						}
+						let html = "<tr class='item-id-" + element.id + "'>" 
+							+ "<td>" + element.id + "</td>"
+							+ "<td>" + element.name	+ "</td>" 
+							+ "<td>" + element.price + "</td>" 
+							+ "<td>" + element.dates + "</td>" 
+							+ "<td>" + element.codes + "</td>" 
+							+ "<td>" + element.capacity	+ "</td>"  
+							+ "<td>" + element.create_by + "</td>" 
+							+ "<td>" + moment(element.create_at).format("YYYY/MM/DD HH:mm:SS") + "</td>" 
+							+ "<td>" + element.update_by + "</td>" 
+							+ "<td>" + moment(element.update_at).format("YYYY/MM/DD HH:mm:SS") + "</td>" 
+							+ "<td><button class='btn btn-success' data-id=" + element.id + ">" + status + "</button></td>" 
+							+ "<td><a target='_blank' + href='/event.html?id=" + element.id + "'><button class='btn btn-info'>update</button></a></td>"
+							+ "<td><button class='btn btn-danger del' data-id=" + element.id + ">delete</td>"
+							+ "</tr>"
+						$("#table tbody").append(html)
+					});
+					$("#table .btn-success").click(function() {
+						if($(this).html() === "booking") {
+							$(this).html("booked")
+							$.ajax({
+								url:"/api/eventbooking/add",
+								type:"POST",
+								headers: {
+									"Authorization": localStorage.getItem("token"),
+								},
+								data: {
+									event_id: $(this).data("id"),
+									status: 1,
+								}
+							})
+						} else {
+							$(this).html("booking")
+							$.ajax({
+								url:"/api/eventbooking/add",
+								type:"POST",
+								headers: {
+									"Authorization": localStorage.getItem("token"),
+								},
+								data: {
+									event_id: $(this).data("id"),
+									status: 0,
+								}
+							})
+						}
+					})
+					$('.del').click(function(){
+						id = $(this).data("id");
+						tr = $(".item-id-" + id)
+						$.ajax({
+							url:"/api/event/list/"+id,
+							type:"DELETE",
+							headers: {
+								"Authorization": localStorage.getItem("token"),
+							}
+						}).done(function(result) {
+							if (result.code === 200) {
+								console.log(tr)
+          						if (tr.length > 0) {
+            						tr.remove()
+							  	}
+							}
+						})
+					})
+				} else{
+					window.location.href = "/login.html"
+				}
+			}
+		})
+	</script>
 </body>
 </html>

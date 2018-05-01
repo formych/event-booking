@@ -12,9 +12,9 @@ import (
 var DB *sqlx.DB
 
 func init() {
-	db, err := sqlx.Connect("mysql", "remote:qwe1234@tcp(112.74.32.54:3306)/test")
+	db, err := sqlx.Connect("mysql", "remote:qwe1234@tcp(112.74.32.54:3306)/test?parseTime=true")
 	if err != nil {
-		logrus.Infof("建立数据库连接失败", err)
+		logrus.Errorf("Connect to db failed, err:[%s]", err.Error())
 		os.Exit(-1)
 	}
 	DB = db

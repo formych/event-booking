@@ -17,13 +17,12 @@ var hmacSampleSecret = []byte("hello world")
 // Authentication 认证
 func Authentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString := c.GetHeader("Token")
+		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
-			c.JSON(http.StatusForbidden, gin.H{"code": http.StatusForbidden, "msg": "token is null"})
+			c.JSON(http.StatusOK, gin.H{"code": http.StatusForbidden, "msg": "token is null"})
 			c.Abort()
 			return
 		}
-
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
@@ -32,11 +31,12 @@ func Authentication() gin.HandlerFunc {
 		})
 		if err != nil {
 			logrus.Errorf("Invalid token string, err:[%s]", err)
-			c.JSON(http.StatusUnauthorized, gin.H{"code": http.StatusUnauthorized, "msg": "wrong token"})
+			c.JSON(http.StatusOK, gin.H{"code": http.StatusUnauthorized, "msg": "wrong token"})
 			c.Abort()
 			return
 		}
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			c.Set("id", fmt.Sprintf("%.0f", claims["id"]))
 			c.Set("name", claims["name"])
 			c.Set("email", claims["email"])
 			c.Next()
@@ -114,21 +114,17 @@ func SignIn(c *gin.Context) {
 		return
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"name":  user.Name,
-		"email": user.Email,
+		"id":    dbuser.ID,
+		"name":  dbuser.Name,
+		"email": dbuser.Email,
 		"nbf":   time.Date(2018, 01, 01, 00, 0, 0, 0, time.UTC).Unix(),
 		"exp":   time.Now().Add(24 * time.Hour).Unix(),
 	})
 	tokenString, err := token.SignedString(hmacSampleSecret)
 	if err != nil {
 		logrus.Errorf("signing token string failed, err:[%v]", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"code": http.StatusInternalServerError, "msg": "内部错误"})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": http.StatusInternalServerError, "msg": "internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "登录成功", "token": tokenString})
-}
-
-// SignOut 退出
-func SignOut(c *gin.Context) {
-	//jwt的话，前端注销该token
+	c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "登录成功", "token": tokenString, "name": dbuser.Name})
 }

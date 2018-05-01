@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <title>booed-list</title>
+	<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/assets/css/common.css">
+	<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+	<header id="header">
+		<div class="logo">Event-Booking</div>
+		<div class="not-login">
+			<a class="text-bold text-white no-underline" href="/login.html">Sign in</a>
+			<span class="text-gray">or</span>
+			<a class="text-bold text-white no-underline" href="/join.html">Sign up</a>
+		</div>
+		<div class="login">
+			<span class="text-name text-bold text-white no-underline">name</span>
+			<a class="text-bold text-white no-underline" href="/login.html">Sign out</a>
+		</div>
+	</header>
+	<nav id="sidebar">
+		<ul class="list-unstyled components">
+			<li><a href="/index.html">Events</a></li>
+			<li><a href="/booked.html">Booked</a></li>
+			<!-- <li><a href="/mine.html">Mine</a></li> -->
+		</ul>
+	</nav>
+	<div class="content container">
+		<div class="panel panel-default">
+			<div class="panel-heading text-center panel-name">
+				<span>Event List</span>
+				<a href="/event.html">
+					<button class="btn btn-primary new-event">New Event</button>
+				</a>
+			</div>
+			<div class="table-response">
+    			<table class="table table-bodered table-condensed table-hover" id="table">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Name</th>
+							<th>Price</th>
+							<th>Dates</th>
+							<th>Codes</th>
+							<th>Capacity</th>
+							<th>Operate</th>
+						</tr>
+					</thead>		
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+	    </div>
+	</div>
+	<script>
+		$("header .not-login").hide()
+		$("header .login").show()
+		$("header .login .text-name").text("User : " + localStorage.getItem("name"))
+		$.ajax({
+			type: "POST",
+			url: "/api/event/list",
+			headers: {
+				"Authorization": localStorage.getItem("token"),
+			},
+			success: function(result) {
+				if(result.code === 200) {
+					result.data.forEach(element => {
+						if(element.status === 1) {
+							let html = "<tr class='item-id-" + element.id + "'>" 
+							+ "<td>" + element.id + "</td>"
+							+ "<td>" + element.name	+ "</td>" 
+							+ "<td>" + element.price + "</td>" 
+							+ "<td>" + element.dates + "</td>" 
+							+ "<td>" + element.codes + "</td>" 
+							+ "<td>" + element.capacity	+ "</td>"  
+							+ "<td><button class='btn btn-success' data-id=" + element.id + " id=no-booking>" + "booked" + "</button></td>" 
+							+ "</tr>"
+							$("#table tbody").append(html)
+						}
+					})
+					$("#table .btn-success").click(function() {
+						id = $("#no-booking").data("id")
+						tr = $(".item-id-" + id)
+						$.ajax({
+							url:"/api/eventbooking/add",
+							type:"POST",
+							headers: {
+								"Authorization": localStorage.getItem("token"),
+							},
+							data: {
+								event_id: id,
+								status: 0,
+							}
+						}).done(function(result) {
+							if (result.code === 200) {
+								console.log(tr)
+								if (tr.length > 0) {
+									tr.remove()
+								}
+							}
+						}) 
+					})					
+				} else {
+					window.location.href = "/login.html"
+				}
+			}
+		})
+	</script>
+</body>
+</html>

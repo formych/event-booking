@@ -20,7 +20,7 @@ type User struct {
 	Tel      string `db:"tel"`
 	Email    string `db:"email" form:"email"`
 	Password string `db:"password" form:"password"`
-	Del      bool   `db:"del" form:"del" json:"del"`
+	Status   int8   `db:"status" form:"status" json:"status"`
 	CreateAt string `db:"create_at"`
 	UpdateAt string `db:"update_at"`
 }
@@ -46,8 +46,7 @@ func (u userDAO) GetByEmail(email string) (user *User, err error) {
 	exeSQL := fmt.Sprintf("SELECT %s FROM %s WHERE email = ?", u.columns, u.tableName)
 	err = DB.Get(user, exeSQL, email)
 	if err == sql.ErrNoRows {
-		err = nil
-		user = nil
+		return nil, nil
 	}
 	if err != nil {
 		logrus.Errorf("查询用户信息失败, sql:[%s], email:[%s], err:[%v]", exeSQL, email, err)
@@ -60,8 +59,7 @@ func (u userDAO) GetByID(id int64) (user *User, err error) {
 	exeSQL := fmt.Sprintf("SELECT %s FROM %s WHERE id = ?", u.columns, u.tableName)
 	err = DB.Get(user, exeSQL, id)
 	if err == sql.ErrNoRows {
-		err = nil
-		user = nil
+		return nil, nil
 	}
 	if err != nil {
 		logrus.Errorf("Get user info by id failed, sql:[%s], id:[%d], err:[%v]", exeSQL, id, err)
@@ -74,8 +72,7 @@ func (u userDAO) GetByName(name string) (user *User, err error) {
 	exeSQL := fmt.Sprintf("SELECT %s FROM %s WHERE name = ?", u.columns, u.tableName)
 	err = DB.Get(user, exeSQL, name)
 	if err == sql.ErrNoRows {
-		err = nil
-		user = nil
+		return nil, nil
 	}
 	if err != nil {
 		logrus.Errorf("Get user info by name failed, sql:[%s], name:[%s], err:[%v]", exeSQL, name, err)
@@ -88,15 +85,10 @@ func (u userDAO) GetByEmailOrName(email, name string) (user *User, err error) {
 	exeSQL := fmt.Sprintf("SELECT %s FROM %s WHERE email = ? or name = ?", u.columns, u.tableName)
 	err = DB.Get(&user, exeSQL, email, name)
 	if err == sql.ErrNoRows {
-		err = nil
-		user = nil
+		return nil, nil
 	}
 	if err != nil {
-		logrus.Errorf("查询用户信息失败, sql:[%s], email:[%s], name:[%s], err:[%v]", exeSQL, email, name, err)
+		logrus.Errorf("Get user info by name and email failed, sql:[%s], email:[%s], name:[%s], err:[%v]", exeSQL, email, name, err)
 	}
 	return
 }
-
-// func (u userDAO) UpdateByEmail(email string) (user *User, err error) {
-// 	exeSQL := fmt.Printf("UPDATE %s SET WHERE id = ?")
-// }
